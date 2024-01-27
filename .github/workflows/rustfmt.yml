@@ -1,0 +1,27 @@
+name: rustfmt
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: "Path to Cargo.toml directory"
+        type: string
+        default: "."
+      rust-version:
+        description: "Rust version to use"
+        type: string
+        default: "nightly"
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          rustup install --profile minimal ${{ inputs.rust-version }}
+          rustup override set ${{ inputs.rust-version }}
+          rustup component add rustfmt
+        working-directory: ${{ inputs.path }}
+      - run: cargo fmt --all -- --check
+        working-directory: ${{ inputs.path }}

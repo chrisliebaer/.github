@@ -1,0 +1,14 @@
+# actual workflow, not just a reusable action
+name: actionlint-call
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  actionlint:
+    uses: chrisliebaer/workflows/.github/workflows/actionlint.yml@master

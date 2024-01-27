@@ -1,0 +1,13 @@
+name: actionlint
+
+on:
+  workflow_call:
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color
