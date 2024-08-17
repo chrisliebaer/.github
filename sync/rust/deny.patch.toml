@@ -7,6 +7,11 @@ ignore = [
 	"RUSTSEC-2024-0363",
 ]
 
+[sources]
+allow-git = [
+	"https://github.com/serenity-rs/serenity?tag=v0.12.1"
+]
+
 [[licenses.clarify]]
 name = "ring"
 expression = "MIT AND ISC AND OpenSSL"
