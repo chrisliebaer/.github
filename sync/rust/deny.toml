@@ -10,8 +10,12 @@ targets = [
 ]
 
 [advisories]
-version = 2
 yanked = "deny"
+
+ignore = [
+	# no fix available
+	"RUSTSEC-2023-0071",
+]
 
 [bans]
 multiple-versions = "allow"
@@ -23,7 +27,6 @@ unknown-registry = "deny"
 unknown-git = "deny"
 
 [licenses]
-version = 2
 confidence-threshold = 0.93
 
 # the good licenses
@@ -40,6 +43,14 @@ allow = [
 	"OFL-1.1",
 ]
 
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [
+		{ path = "LICENSE", hash = 0xbd0eed23 }
+]
+
 # semi global exceptions (the stuff I always run into)
 # add local exceptions to deny.exceptions.toml
 exceptions = [{ allow = ["Unicode-DFS-2016"], name = "unicode-ident" }]
+
