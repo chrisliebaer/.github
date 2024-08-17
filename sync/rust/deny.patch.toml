@@ -1,6 +1,7 @@
 [advisories]
 yanked = "deny"
 
+
 ignore = [
 	# no fix available
 	"RUSTSEC-2023-0071",
@@ -10,11 +11,14 @@ ignore = [
 
 [licenses]
 
-exceptions = [
-	# ring is using multiple intermangled licenses
-	{ allow = ["ISC", "OpenSSL"], name = "ring" },
-	{ allow = ["MPL-2.0"], name = "webpki-roots" },
-]
+
+[[licenses.exceptions]]
+name = "ring"
+allow = ["MIT", "ISC", "OpenSSL"]
+
+[[licenses.exceptions]]
+name = "webpki-roots"
+allow = ["MPL-2.0"]
 
 [[licenses.clarify]]
 name = "ring"
