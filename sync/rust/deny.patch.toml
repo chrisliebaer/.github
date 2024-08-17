@@ -9,9 +9,9 @@ ignore = [
 [licenses]
 
 exceptions = [
-		# ring is using multiple intermangled licenses
-		{ allow = ["ISC", "OpenSSL"], name = "ring" },
-		{ allow = ["MPL-2.0"], name = "webpki-roots" }
+	# ring is using multiple intermangled licenses
+	{ allow = ["ISC", "OpenSSL"], name = "ring" },
+	{ allow = ["MPL-2.0"], name = "webpki-roots" },
 ]
 
 [[licenses.clarify]]
