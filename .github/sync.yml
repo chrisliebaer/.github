@@ -1,0 +1,16 @@
+group:
+  # common
+  - files:
+      - source: sync/common
+        dest: ./
+    repos: |
+      chrisliebaer/cheapt
+      chrisliebaer/kitmatheinfo-bot
+
+  # rust
+  - files:
+      - source: sync/rust
+        dest: ./
+    repos: |
+      chrisliebaer/cheapt
+      chrisliebaer/kitmatheinfo-bot
