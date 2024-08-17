@@ -4,6 +4,8 @@ yanked = "deny"
 ignore = [
 	# no fix available
 	"RUSTSEC-2023-0071",
+	# this one we should actually fix
+	"RUSTSEC-2024-0363",
 ]
 
 [licenses]
