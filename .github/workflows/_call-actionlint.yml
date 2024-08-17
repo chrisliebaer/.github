@@ -11,4 +11,4 @@ on:
 
 jobs:
   actionlint:
-    uses: chrisliebaer/workflows/.github/workflows/actionlint.yml@master
+    uses: ./.github/workflows/actionlint.yml
