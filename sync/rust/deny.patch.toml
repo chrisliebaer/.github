@@ -1,6 +1,4 @@
 [advisories]
-yanked = "deny"
-
 
 ignore = [
 	# no fix available

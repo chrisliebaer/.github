@@ -38,6 +38,6 @@ allow = [
 	"OFL-1.1",
 ]
 
-# semi global exceptions (the stuff I always run into)
-# add local exceptions to deny.exceptions.toml
-exceptions = [{ allow = ["Unicode-DFS-2016"], crate = "unicode-ident" }]
+[[licenses.exceptions]]
+name = "unicode-ident"
+allow = ["Unicode-DFS-2016"]
