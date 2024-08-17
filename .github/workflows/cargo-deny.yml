@@ -30,6 +30,7 @@ jobs:
       # cargo-deny is a bit clunky. we manually merge local overrides into the toml
       # also docker image forces non-root user, so we need to run as root
       # which is why we can't use githubs `use: docker://...` syntax
+      # toml merge will overwrite existing arrays, so very careful with the patch file
       - run: docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace --user root ghcr.io/mesosphere/toml-merge:v0.2.0 --verbose 9 --patch-file deny.patch.toml --in-place deny.toml
 
       # print our masterpiece for debugging
