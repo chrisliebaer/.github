@@ -7,17 +7,6 @@ ignore = [
 	"RUSTSEC-2024-0363",
 ]
 
-[licenses]
-
-
-[[licenses.exceptions]]
-name = "ring"
-allow = ["MIT", "ISC", "OpenSSL"]
-
-[[licenses.exceptions]]
-name = "webpki-roots"
-allow = ["MPL-2.0"]
-
 [[licenses.clarify]]
 name = "ring"
 expression = "MIT AND ISC AND OpenSSL"
