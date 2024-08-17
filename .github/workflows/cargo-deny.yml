@@ -26,6 +26,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+
+      # cargo-deny is a bit clunky. we manually merge local overrides into the toml
+      - uses: docker://ghcr.io/mesosphere/toml-merge:v0.2.0
+        with:
+          args: --verbose --patch-file deny.patch.toml --in-place deny.toml
+
       - uses: EmbarkStudios/cargo-deny-action@8371184bd11e21dcf8ac82ebf8c9c9f74ebf7268 # v2
         with:
           rust-version: ${{ inputs.rust-version }}
