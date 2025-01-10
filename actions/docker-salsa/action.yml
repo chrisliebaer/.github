@@ -1,0 +1,157 @@
+name: Build and push Docker image
+description: Bundles commonly used actions and configurations for building and pushing a Docker image
+
+inputs:
+  registry:
+    description: "The registry to push the image to. Defaults to ghcr.io on Github and github.server_url on Gitea"
+    required: false
+  username:
+    description: "The username to use for the registry."
+    required: false
+    default: ${{ github.repository_owner }}
+  password:
+    description: "The password to use for the registry."
+    required: false
+    default: ${{ github.token }}
+  image:
+    description: "The name of the image to build and push"
+    required: false
+    default: ""
+  default-branch:
+    description: "The branch to consider as the default branch"
+    required: false
+    default: ${{ github.event.repository.default_branch }}
+  cache-tag:
+    description: "The tag to use for the cache image. Set to empty string to disable caching."
+    required: false
+    default: buildcache
+  cache-mode:
+    description: "The cache mode to use for the build"
+    required: false
+    default: "max"
+  context:
+    description: "The context to use for the build"
+    required: false
+    # this makes buildx use the current directory as context, otherwise it would default to a full clone
+    # this so called "git-context" ignores .dockerignore and pulls in the whole repository
+    # and typ of "COPY . /" will therefore invalidate the entire build cache
+    default: "."
+  push:
+    description: "Whether to push the image to the registry"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Transform inputs
+      id: transform
+      shell: bash
+      run: |
+        # to identify gitea, we check environment for GITEA_ variables, if any are set, we assume we are on gitea
+        is_gitea=$(env | grep -c ^GITEA_)
+        registry="ghcr.io"
+        if [ "$is_gitea" -gt 0 ]; then
+          # server_url is with schema, so we need to remove it (can be http or https)
+          registry=$(echo "${{ github.server_url }}" | sed -e 's/^http[s]*:\/\///')
+        fi
+
+        # explicit registry overrides all
+        if [ -n "${{ inputs.registry }}" ]; then
+          registry="${{ inputs.registry }}"
+        fi
+        echo "registry=$registry" >> "$GITHUB_OUTPUT"
+
+        # if user passed an image, use it, otherwise use REGISTRY/OWNER/REPO
+        image="$registry/$GITHUB_REPOSITORY"
+        if [ -n "${{ inputs.image }}" ]; then
+          image="${{ inputs.image }}"
+        fi
+        echo "image=$image" >> "$GITHUB_OUTPUT"
+
+        # we can't use the default branch input within other inputs, so we filter it here
+        will_push="false"
+        if [ -z "${{ inputs.push }}" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/${{ inputs.default-branch }}" ]; then
+            # we push for default branch
+            echo "This pipeline is running on the default branch, it will push the image"
+            will_push="true"
+          elif [ "${{ github.ref }}" = "refs/tags/"* ]; then
+            # or for tags
+            echo "This pipeline was triggered by a tag, it will push the image"
+            will_push="true"
+          else
+            # otherwise we don't push
+            echo "This pipeline will not push the image"
+          fi
+        else
+          # if user set the push input, we abide by it
+          will_push="${{ inputs.push }}"
+        fi
+        echo "push=$will_push" >> "$GITHUB_OUTPUT"
+
+        # we only want to push the cache if we also push the image and we have a cache tag
+        if [ "$will_push" = "true" ] && [ -n "${{ inputs.cache-tag }}" ]; then
+          echo "cache-to=type=registry,ref=${image}:${{ inputs.cache-tag }},mode=${{ inputs.cache-mode }},image-manifest=true,compression=zstd" >> "$GITHUB_OUTPUT"
+        else
+          echo "Image caching is disabled"
+          echo "cache-to=" >> "$GITHUB_OUTPUT"
+        fi
+
+        # extract first line of commit message
+        commit_message=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+        echo "commit_message=$commit_message" >> "$GITHUB_OUTPUT"
+
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        # composite actions pass all inputs to each step, we need to preserve original inputs, hence "context: workflow"
+        context: "workflow"
+        images: ${{ steps.transform.outputs.image }}
+        labels: |
+          # add commit first of commit message
+          commit_message=${{ steps.transform.outputs.commit_message }}
+        flavor: |
+          latest=false
+        tags: |
+          # latest tag for default branch
+          type=raw,value=latest,enable={{is_default_branch}}
+
+          # semver tags for git tags (starting with v)
+          type=semver,pattern=v{{version}}
+          type=semver,pattern=v{{major}}
+          type=semver,pattern=v{{major}}.{{minor}}
+          type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
+
+          # tag with git entities (get overriden by new push to same entity)
+          type=ref,event=branch
+          type=ref,event=pr
+
+          # only tag every commit on default branch (not in prs or other branches)
+          type=sha,enable={{is_default_branch}}
+          #type=sha,format=long,enable={{is_default_branch}}
+
+    # TODO: only login if we push (gitea does not support if condition)
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ steps.transform.outputs.registry }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        # we push if user enabled it and we have at least one tag from the meta action
+        push: ${{ steps.transform.outputs.push }}
+        tags: ${{ steps.meta.outputs.tags }}
+        annotations: ${{ steps.meta.outputs.annotations }}
+        labels: ${{ steps.meta.outputs.labels }}
+        context: ${{ inputs.context }}
+        cache-from: type=registry,ref=${{ steps.transform.outputs.image }}:${{ inputs.cache-tag }}
+        # click for madnes: https://gitlab.com/gitlab-org/container-registry/-/issues/407
+        cache-to: ${{ steps.transform.outputs.cache-to }}
