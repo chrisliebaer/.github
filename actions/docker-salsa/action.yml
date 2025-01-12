@@ -67,6 +67,8 @@ runs:
         if [ -n "${{ inputs.image }}" ]; then
           image="${{ inputs.image }}"
         fi
+        # lowercase image name
+        image=$(echo "$image" | tr '[:upper:]' '[:lower:]')
         echo "image=$image" >> "$GITHUB_OUTPUT"
 
         # we can't use the default branch input within other inputs, so we filter it here
