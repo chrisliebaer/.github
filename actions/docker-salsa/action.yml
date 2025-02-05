@@ -49,9 +49,16 @@ runs:
       shell: bash
       run: |
         # to identify gitea, we check environment for GITEA_ variables, if any are set, we assume we are on gitea
-        is_gitea=$(env | grep -c ^GITEA_)
+        if env | grep -q ^GITEA_; then
+          echo "Detected Gitea environment"
+          is_gitea="true"
+        else
+          echo "Detected Github environment"
+          is_gitea="false"
+        fi
+
         registry="ghcr.io"
-        if [ "$is_gitea" -gt 0 ]; then
+        if [ "$is_gitea" = "true" ]; then
           # server_url is with schema, so we need to remove it (can be http or https)
           registry=$(echo "${{ github.server_url }}" | sed -e 's/^http[s]*:\/\///')
         fi
