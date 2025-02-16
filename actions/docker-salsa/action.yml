@@ -47,6 +47,17 @@ runs:
     - name: Transform inputs
       id: transform
       shell: bash
+      env:
+        GITHUB_SERVER_URL: ${{ github.server_url }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
+        INPUT_IMAGE: ${{ inputs.image }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_REF: ${{ github.ref }}
+        INPUT_DEFAULT_BRANCH: ${{ inputs.default-branch }}
+        INPUT_PUSH: ${{ inputs.push }}
+        INPUT_CACHE_TAG: ${{ inputs.cache-tag }}
+        INPUT_CACHE_MODE: ${{ inputs.cache-mode }}
+        GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
       run: |
         # to identify gitea, we check environment for GITEA_ variables, if any are set, we assume we are on gitea
         if env | grep -q ^GITEA_; then
@@ -60,32 +71,32 @@ runs:
         registry="ghcr.io"
         if [ "$is_gitea" = "true" ]; then
           # server_url is with schema, so we need to remove it (can be http or https)
-          registry=$(echo "${{ github.server_url }}" | sed -e 's/^http[s]*:\/\///')
+          registry=$(echo "$GITHUB_SERVER_URL" | sed -e 's/^http[s]*:\/\///')
         fi
 
         # explicit registry overrides all
-        if [ -n "${{ inputs.registry }}" ]; then
-          registry="${{ inputs.registry }}"
+        if [ -n "$INPUT_REGISTRY" ]; then
+          registry="$INPUT_REGISTRY"
         fi
         echo "registry=$registry" >> "$GITHUB_OUTPUT"
 
         # if user passed an image, use it, otherwise use REGISTRY/OWNER/REPO
         image="$registry/$GITHUB_REPOSITORY"
-        if [ -n "${{ inputs.image }}" ]; then
-          image="${{ inputs.image }}"
+        if [ -n "$INPUT_IMAGE" ]; then
+          image="$INPUT_IMAGE"
         fi
         # lowercase image name
         image=$(echo "$image" | tr '[:upper:]' '[:lower:]')
         echo "image=$image" >> "$GITHUB_OUTPUT"
 
-        # we can't use the default branch input within other inputs, so we filter it here
+        # we only push if we are on default branch or a tag
         will_push="false"
-        if [ -z "${{ inputs.push }}" ]; then
-          if [ "${{ github.ref }}" = "refs/heads/${{ inputs.default-branch }}" ]; then
+        if [ -z "$INPUT_PUSH" ]; then
+          if [ "$GITHUB_REF" = "refs/heads/$INPUT_DEFAULT_BRANCH" ]; then
             # we push for default branch
             echo "This pipeline is running on the default branch, it will push the image"
             will_push="true"
-          elif [ "${{ github.ref }}" = "refs/tags/"* ]; then
+          elif [ "$GITHUB_REF" = "refs/tags/"* ]; then
             # or for tags
             echo "This pipeline was triggered by a tag, it will push the image"
             will_push="true"
@@ -95,20 +106,20 @@ runs:
           fi
         else
           # if user set the push input, we abide by it
-          will_push="${{ inputs.push }}"
+          will_push="$INPUT_PUSH"
         fi
         echo "push=$will_push" >> "$GITHUB_OUTPUT"
 
         # we only want to push the cache if we also push the image and we have a cache tag
-        if [ "$will_push" = "true" ] && [ -n "${{ inputs.cache-tag }}" ]; then
-          echo "cache-to=type=registry,ref=${image}:${{ inputs.cache-tag }},mode=${{ inputs.cache-mode }},image-manifest=true,compression=zstd" >> "$GITHUB_OUTPUT"
+        if [ "$will_push" = "true" ] && [ -n "$INPUT_CACHE_TAG" ]; then
+          echo "cache-to=type=registry,ref=${image}:${INPUT_CACHE_TAG},mode=${INPUT_CACHE_MODE},image-manifest=true,compression=zstd" >> "$GITHUB_OUTPUT"
         else
           echo "Image caching is disabled"
           echo "cache-to=" >> "$GITHUB_OUTPUT"
         fi
 
         # extract first line of commit message
-        commit_message=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+        commit_message=$(echo "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" | head -n 1)
         echo "commit_message=$commit_message" >> "$GITHUB_OUTPUT"
 
     - name: Docker meta
@@ -119,7 +130,7 @@ runs:
         context: "workflow"
         images: ${{ steps.transform.outputs.image }}
         labels: |
-          # add commit first of commit message
+          # add first line of commit message
           commit_message=${{ steps.transform.outputs.commit_message }}
         flavor: |
           latest=false
