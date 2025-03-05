@@ -36,7 +36,7 @@ jobs:
       # print our masterpiece for debugging
       - run: cat deny.toml
 
-      - uses: EmbarkStudios/cargo-deny-action@0484eedcba649433ebd03d9b7c9c002746bbc4b9 # v2
+      - uses: EmbarkStudios/cargo-deny-action@4de59db63a066737e557c2c4dd3d1f70206de781 # v2
         with:
           rust-version: ${{ inputs.rust-version }}
           manifest-path: ${{ inputs.path }}/Cargo.toml
