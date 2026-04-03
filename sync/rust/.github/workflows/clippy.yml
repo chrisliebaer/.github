@@ -10,4 +10,4 @@ on:
 
 jobs:
   clippy:
-    uses: chrisliebaer/.github/.github/workflows/clippy.yml@master
+    uses: chrisliebaer/.github/.github/workflows/clippy.yml@c7b49aac6c730cdd2b84a7be4391eeaa43a18ef6 # master
