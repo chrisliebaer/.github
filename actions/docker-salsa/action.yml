@@ -3,7 +3,7 @@ description: Bundles commonly used actions and configurations for building and p
 
 inputs:
   registry:
-    description: "The registry to push the image to. Defaults to ghcr.io on Github and github.server_url on Gitea"
+    description: "The registry to push the image to. Defaults to ghcr.io on Github and github.server_url on Forgejo or Gitea"
     required: false
   username:
     description: "The username to use for the registry."
@@ -59,9 +59,9 @@ runs:
         INPUT_CACHE_MODE: ${{ inputs.cache-mode }}
         GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
       run: |
-        # to identify gitea, we check environment for GITEA_ variables, if any are set, we assume we are on gitea
-        if env | grep -q ^GITEA_; then
-          echo "Detected Gitea environment"
+        # Forgejo runners set FORGEJO_ACTIONS, Gitea runners set GITEA_ACTIONS
+        if [ "$FORGEJO_ACTIONS" = "true" ] || [ "$GITEA_ACTIONS" = "true" ]; then
+          echo "Detected Forgejo or Gitea environment"
           is_gitea="true"
         else
           echo "Detected Github environment"
